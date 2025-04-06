@@ -5,6 +5,8 @@ const cors = require("cors");
 
 app.use(express.json());
 app.use(cors());
+const path = require("path");
+app.use(express.static(path.join(__dirname, "dist")));
 
 morgan.token("body", (req) => JSON.stringify(req.body));
 app.use(
@@ -36,9 +38,9 @@ let persons = [
   },
 ];
 
-app.get("/", (request, response) => {
-  response.send("<h1>Hello World!</h1>");
-});
+// app.get("/", (request, response) => {
+//   response.send("<h1>Hello World!</h1>");
+// });
 
 app.get("/api/persons", (request, response) => {
   response.json(persons);
@@ -99,7 +101,7 @@ app.post("/api/persons", (request, response) => {
   response.json(person);
 });
 
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
