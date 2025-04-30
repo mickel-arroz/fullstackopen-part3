@@ -3,6 +3,8 @@ const app = express();
 const morgan = require("morgan");
 const cors = require("cors");
 
+require("dotenv").config();
+
 app.use(express.json());
 app.use(cors());
 const path = require("path");
@@ -15,67 +17,55 @@ app.use(
   )
 );
 
-let persons = [
-  {
-    id: 1,
-    name: "Arto Hellas",
-    number: "040-123456",
-  },
-  {
-    id: 2,
-    name: "Ada Lovelace",
-    number: "39-44-5323523",
-  },
-  {
-    id: 3,
-    name: "Dan Abramov",
-    number: "12-43-234345",
-  },
-  {
-    id: 4,
-    name: "Mary Poppendieck",
-    number: "39-23-6423122",
-  },
-];
-
-// app.get("/", (request, response) => {
-//   response.send("<h1>Hello World!</h1>");
-// });
-
-app.get("/api/persons", (request, response) => {
-  response.json(persons);
+app.get("/", (request, response) => {
+  response.send("<h1>Hello World!</h1>");
 });
 
-app.get("/info", (request, response) => {
+const Person = require("./models/person");
+
+app.get("/api/persons", (request, response) => {
+  Person.find({}).then((persons) => {
+    response.json(persons);
+  });
+});
+
+app.get("/info", async (request, response) => {
+  const count = await Person.countDocuments({});
+
   response.send(
-    `<h2>Phonebook has info of ${
-      persons.length
-    } people</h2> <br> <p>${new Date()}</p>`
+    `<h2>Phonebook has info of ${count} people</h2> <br> <p>${new Date()}</p>`
   );
 });
 
 app.get("/api/persons/:id", (request, response) => {
-  const id = request.params.id;
-  const person = persons.find((person) => person.id == id);
-  if (person) {
-    response.json(person);
-  } else {
-    response.status(404).end();
+  Person.findById(request.params.id).then((note) => {
+    response.json(note);
+  });
+});
+
+app.get("/api/persons/name/:name", async (request, response) => {
+  try {
+    const person = await Person.findOne({ name: request.params.name });
+    if (person) {
+      response.json(person);
+    } else {
+      response.status(404).json({ error: "Persona no encontrada" });
+    }
+  } catch (error) {
+    response.status(500).json({ error: "Error al buscar la persona" });
   }
 });
 
-app.delete("/api/persons/:id", (request, response) => {
-  const id = Number(request.params.id);
-  persons = persons.filter((person) => person.id !== id);
-
+app.delete("/api/persons/:id", async (request, response) => {
+  const id = request.params.id;
+  const deletedPerson = await Person.findByIdAndDelete(id);
+  if (!deletedPerson) {
+    return response.status(404).json({ error: "Persona no encontrada" });
+  }
   response.status(204).end();
 });
 
-const generateId = () => {
-  return Math.floor(Math.random() * Number.MAX_SAFE_INTEGER) + 1;
-};
-
-app.post("/api/persons", (request, response) => {
+app.post("/api/persons", async (request, response) => {
   const body = request.body;
 
   if (!body.name || !body.number) {
@@ -84,21 +74,54 @@ app.post("/api/persons", (request, response) => {
     });
   }
 
-  if (persons.some((person) => person.name === body.name)) {
+  const existingPerson = await Person.exists({ name: body.name });
+
+  if (existingPerson) {
     return response.status(400).json({
       error: "name must be unique",
     });
   }
 
-  const person = {
+  const person = new Person({
     name: body.name,
     number: body.number,
-    id: generateId(),
-  };
+  });
 
-  persons = persons.concat(person);
+  person.save().then((savedPerson) => {
+    response.json(savedPerson);
+  });
+});
 
-  response.json(person);
+app.put("/api/persons/:id", async (request, response) => {
+  const { name, number } = request.body;
+
+  // Validar que se proporcionen ambos campos
+  if (!name || !number) {
+    return response.status(400).json({ error: "Faltan campos obligatorios" });
+  }
+
+  try {
+    const updatedPerson = await Person.findByIdAndUpdate(
+      request.params.id,
+      { name, number },
+      {
+        new: true, // Devuelve el documento actualizado
+        runValidators: true, // Aplica las validaciones del esquema
+        context: "query", // Necesario para que runValidators funcione correctamente
+      }
+    );
+
+    if (!updatedPerson) {
+      return response.status(404).json({ error: "Persona no encontrada" });
+    }
+
+    response.json(updatedPerson);
+  } catch (error) {
+    console.error("Error al actualizar la persona:", error);
+    response
+      .status(400)
+      .json({ error: "ID inválido o error en la actualización" });
+  }
 });
 
 const PORT = process.env.PORT || 3001;
