@@ -8,6 +8,7 @@ const PersonForm = ({
   newPhone,
   setNewPhone,
   setMessage,
+  setError,
 }) => {
   const handleSubmitAddName = (event) => {
     event.preventDefault();
@@ -40,7 +41,11 @@ const PersonForm = ({
             }, 5000);
           })
           .catch((error) => {
-            alert("Error updating contact:", error);
+            const errorMessage = error.response?.data?.error || error.message;
+            setError(`Error updating contact: ${errorMessage}`);
+            setTimeout(() => {
+              setError(null);
+            }, 5000);
           });
       }
     } else {
@@ -66,7 +71,11 @@ const PersonForm = ({
           }, 5000);
         })
         .catch((error) => {
-          alert("Error adding contact:", error);
+          const errorMessage = error.response?.data?.error || error.message;
+          setError(`Error creating contact: ${errorMessage}`);
+          setTimeout(() => {
+            setError(null);
+          }, 5000);
         });
     }
   };

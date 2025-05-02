@@ -55,6 +55,7 @@ const App = () => {
         newPhone={newPhone}
         setNewPhone={setNewPhone}
         setMessage={setMessage}
+        setError={setError}
       ></PersonForm>
       <h2>Numbers</h2>
       <Persons

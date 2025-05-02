@@ -16,17 +16,11 @@ const deleteContact = (id) => {
   return request.then((response) => response.data);
 };
 
-const update = async (name, newObject) => {
+const update = async (id, newObject) => {
+  // Recibe el ID directamente
   try {
-    // Buscar la persona por nombre
-    const getResponse = await axios.get(
-      `${baseUrl}/name/${encodeURIComponent(name)}`
-    );
-    const id = getResponse.data.id;
-
-    // Realizar la actualización utilizando el id obtenido
-    const putResponse = await axios.put(`${baseUrl}/${id}`, newObject);
-    return putResponse.data;
+    const response = await axios.put(`${baseUrl}/${id}`, newObject);
+    return response.data;
   } catch (error) {
     console.error("Error al actualizar la persona:", error);
     throw error;

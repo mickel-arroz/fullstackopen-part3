@@ -1,5 +1,10 @@
 const express = require("express");
 const app = express();
+
+app.get("/ping", (req, res) => {
+  res.json({ message: "pong" });
+});
+
 const morgan = require("morgan");
 const cors = require("cors");
 
@@ -8,7 +13,6 @@ require("dotenv").config();
 app.use(express.json());
 app.use(cors());
 const path = require("path");
-app.use(express.static(path.join(__dirname, "dist")));
 
 morgan.token("body", (req) => JSON.stringify(req.body));
 app.use(
@@ -16,10 +20,6 @@ app.use(
     ":method :url :status :res[content-length] - :response-time ms - Body: :body"
   )
 );
-
-app.get("/", (request, response) => {
-  response.send("<h1>Hello World!</h1>");
-});
 
 const Person = require("./models/person");
 
@@ -92,13 +92,6 @@ app.post("/api/persons", async (request, response, next) => {
   }
 
   try {
-    const existingPerson = await Person.exists({ name: body.name });
-    if (existingPerson) {
-      const err = new Error("El nombre debe ser único");
-      err.status = 400;
-      return next(err);
-    }
-
     const person = new Person({
       name: body.name,
       number: body.number,
@@ -145,11 +138,15 @@ app.put("/api/persons/:id", async (request, response, next) => {
   }
 });
 
+app.use(express.static(path.join(__dirname, "dist")));
+
 const errorHandler = (error, request, response, next) => {
   console.error(error.message);
 
   if (error.name === "CastError") {
     return response.status(400).json({ error: "ID malformado" });
+  } else if (error.name === "ValidationError") {
+    return response.status(400).json({ error: error.message });
   }
 
   if (error.status) {
@@ -162,7 +159,9 @@ const errorHandler = (error, request, response, next) => {
 
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== "production") {
+  const PORT = process.env.PORT || 3001;
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
