@@ -1,0 +1,3 @@
+# EN DESHUSO
+# ERROR: ESLintIgnoreWarning: The ".eslintignore" file is no longer supported. Switch to using the "ignores" property in "eslint.config.js": https://eslint.org/docs/latest/use/configure/migration-guide#ignoring-files
+dist
