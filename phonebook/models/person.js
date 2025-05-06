@@ -9,7 +9,7 @@ console.log("connecting to", url);
 mongoose
   .connect(url)
 
-  .then((result) => {
+  .then(() => {
     console.log("connected to MongoDB");
   })
   .catch((error) => {
@@ -31,8 +31,8 @@ const personSchema = new mongoose.Schema({
       },
       message: (props) =>
         `${props.value} no es un número válido. Debe tener 8+ caracteres y el formato XX-XXXXXX o XXX-XXXXXXXX.`,
+      required: true,
     },
-    required: true,
   },
 });
 
